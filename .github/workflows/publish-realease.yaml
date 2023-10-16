@@ -13,7 +13,7 @@ jobs:
   publish-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -42,13 +42,14 @@ jobs:
 
           echo "Release type is: $RELEASE_TYPE"
           echo "::set-output name=release-type::$RELEASE_TYPE"
+          echo "release-type=$RELEASE_TYPE"" >> $GITHUB_OUTPUT
 
       - name: Get latest version tag
         id: get-latest-tag
         run: |
           CURRENT_VERSION=$(git describe --abbrev=0 --tags)
           echo "Current version is: $CURRENT_VERSION"
-          echo "::set-output name=current-version::$CURRENT_VERSION"
+          echo "current_version=$CURRENT_VERSION"" >> $GITHUB_OUTPUT
 
       - name: Generate New Version
         id: generate-new-version
@@ -67,9 +68,10 @@ jobs:
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
             NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$((${VERSION_PARTS[2]} + 1))"
           fi
-      
-          echo "::set-output name=new-version::$NEW_VERSION"
-          echo "::set-output name=current-version::$CURRENT_VERSION"
+
+          echo "New version is: $NEW_VERSION"
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up Git
         run: |
@@ -79,21 +81,14 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ncipollo/release-action@v1
         with:
-          commit: ${{ github.ref }}
+          commit: ${{ github.sha }}
           tag: ${{ steps.generate-new-version.outputs.new-version }}
 
       - name: Increment Version and Retag
         env:
           NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
-          CURRENT_VERSION: ${{ steps.generate-new-version.outputs.current-version }}
           DEV_IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Retrieve the generated new version
-          NEW_VERSION=$RELEASE_TYPE
-      
-          # Retrieve the current version
-          CURRENT_VERSION=$RELEASE_TYPE
-      
           # Retag the images with the new version
           docker tag $REGISTRY/${IMAGE_NAME,,}:$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
           docker tag $REGISTRY/${IMAGE_NAME,,}:$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
