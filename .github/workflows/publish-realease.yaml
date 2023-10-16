@@ -1,0 +1,83 @@
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Gather Release Type
+        run: |
+          # Extract the commit message from the most recent commit
+          COMMIT_MESSAGE=$(git log --format=%B -n 1)
+
+          # Check for release type labels in the commit message
+          if [[ $COMMIT_MESSAGE == *"[major]"* ]]; then
+            RELEASE_TYPE="MAJOR"
+          elif [[ $COMMIT_MESSAGE == *"[minor]"* ]]; then
+            RELEASE_TYPE="MINOR"
+          elif [[ $COMMIT_MESSAGE == *"[patch]"* ]]; then
+            RELEASE_TYPE="PATCH"
+          else
+            # Handle cases where no release type is specified
+            RELEASE_TYPE="PATCH" # or set a default
+          fi
+
+          echo "Release type is: $RELEASE_TYPE"
+          echo "RELEASE_TYPE=$RELEASE_TYPE" >> $GITHUB_ENV
+
+      - name: Generate New Version
+        id: generate-new-version
+        run: |
+          # Extract the current version from the image (this is a simplified example)
+          CURRENT_VERSION=$(docker inspect your-image:latest --format '{{.Config.Labels.version}}')
+      
+          # Decide on the type of release (MAJOR, MINOR, PATCH)
+          RELEASE_TYPE=$RELEASE_TYPE
+      
+          # Increment the version based on the release type
+          if [ "$RELEASE_TYPE" == "MAJOR" ]; then
+            IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+            NEW_VERSION="${VERSION_PARTS[0]}.$((${VERSION_PARTS[1]} + 1)).0"
+          elif [ "$RELEASE_TYPE" == "MINOR" ]; then
+            IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+            NEW_VERSION="${VERSION_PARTS[0]}.$((${VERSION_PARTS[1]} + 1)).${VERSION_PARTS[2]}"
+          else
+            IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+            NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$((${VERSION_PARTS[2]} + 1))"
+          fi
+      
+          echo "::set-output name=new-version::$NEW_VERSION"
+          echo "::set-output name=current-version::$CURRENT_VERSION"
+
+      - name: Increment Version and Retag
+        env:
+          NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
+          CURRENT_VERSION: ${{ steps.generate-new-version.outputs.current-version }}
+          DEV_IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Retrieve the generated new version
+          NEW_VERSION=$RELEASE_TYPE
+      
+          # Retrieve the current version
+          CURRENT_VERSION=$RELEASE_TYPE
+      
+          # Retag the images with the new version
+          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:$NEW_VERSION
+          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:latest
+      
+          # Push the retagged images to the public registry
+          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:$NEW_VERSION
+          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:latest
