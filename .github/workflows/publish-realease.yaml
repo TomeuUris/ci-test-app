@@ -1,3 +1,5 @@
+name: Publish Release
+
 on:
   push:
     branches:
@@ -17,8 +19,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Gather Release Type
+        id: gather-release-type
         run: |
           # Extract the commit message from the most recent commit
           COMMIT_MESSAGE=$(git log --format=%B -n 1)
@@ -36,17 +41,21 @@ jobs:
           fi
 
           echo "Release type is: $RELEASE_TYPE"
-          echo "RELEASE_TYPE=$RELEASE_TYPE" >> $GITHUB_ENV
+          echo "::set-output name=release-type::$RELEASE_TYPE"
+
+      - name: Get latest version tag
+        id: get-latest-tag
+        run: |
+          CURRENT_VERSION=$(git describe --abbrev=0 --tags)
+          echo "Current version is: $CURRENT_VERSION"
+          echo "::set-output name=current-version::$CURRENT_VERSION"
 
       - name: Generate New Version
         id: generate-new-version
+        env:
+          CURRENT_VERSION: ${{ steps.get-latest-tag.outputs.current-version }}
+          RELEASE_TYPE: ${{ steps.gather-release-type.outputs.current-version }}
         run: |
-          # Extract the current version from the image (this is a simplified example)
-          CURRENT_VERSION=$(docker inspect $REGISTRY/${IMAGE_NAME,,}:latest --format '{{.Config.Labels.version}}')
-      
-          # Decide on the type of release (MAJOR, MINOR, PATCH)
-          RELEASE_TYPE=$RELEASE_TYPE
-      
           # Increment the version based on the release type
           if [ "$RELEASE_TYPE" == "MAJOR" ]; then
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
@@ -61,6 +70,17 @@ jobs:
       
           echo "::set-output name=new-version::$NEW_VERSION"
           echo "::set-output name=current-version::$CURRENT_VERSION"
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+  
+      - uses: actions/checkout@v3
+      - uses: ncipollo/release-action@v1
+        with:
+          commit: ${{ github.ref }}
+          tag: ${{ steps.generate-new-version.outputs.new-version }}
 
       - name: Increment Version and Retag
         env:
