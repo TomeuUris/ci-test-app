@@ -48,7 +48,7 @@ jobs:
         run: |
           CURRENT_VERSION=$(git describe --abbrev=0 --tags)
           echo "Current version is: $CURRENT_VERSION"
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate New Version
         id: generate-new-version
