@@ -42,7 +42,7 @@ jobs:
         id: generate-new-version
         run: |
           # Extract the current version from the image (this is a simplified example)
-          CURRENT_VERSION=$(docker inspect your-image:latest --format '{{.Config.Labels.version}}')
+          CURRENT_VERSION=$(docker inspect $REGISTRY/$IMAGE_NAME:latest --format '{{.Config.Labels.version}}')
       
           # Decide on the type of release (MAJOR, MINOR, PATCH)
           RELEASE_TYPE=$RELEASE_TYPE
@@ -75,9 +75,9 @@ jobs:
           CURRENT_VERSION=$RELEASE_TYPE
       
           # Retag the images with the new version
-          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:$NEW_VERSION
-          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:latest
+          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:$NEW_VERSION
+          docker tag $REGISTRY/$IMAGE_NAME:$DEV_IMAGE_TAG $REGISTRY/$IMAGE_NAME:latest
       
           # Push the retagged images to the public registry
-          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:$NEW_VERSION
-          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG:latest
+          docker push $REGISTRY/$IMAGE_NAME:$NEW_VERSION
+          docker push $REGISTRY/$IMAGE_NAME:latest
