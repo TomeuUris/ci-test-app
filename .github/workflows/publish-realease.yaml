@@ -41,15 +41,14 @@ jobs:
           fi
 
           echo "Release type is: $RELEASE_TYPE"
-          echo "::set-output name=release-type::$RELEASE_TYPE"
-          echo "release-type=$RELEASE_TYPE"" >> $GITHUB_OUTPUT
+          echo "release-type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
 
       - name: Get latest version tag
         id: get-latest-tag
         run: |
           CURRENT_VERSION=$(git describe --abbrev=0 --tags)
           echo "Current version is: $CURRENT_VERSION"
-          echo "current_version=$CURRENT_VERSION"" >> $GITHUB_OUTPUT
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate New Version
         id: generate-new-version
