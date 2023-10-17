@@ -1,7 +1,9 @@
 name: Publish Release
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - main
 
@@ -10,8 +12,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   
 jobs:
-  publish-release:
+  retag:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     permissions:
       contents: write
       packages: write
@@ -22,18 +25,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Print sha
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          echo "The github sha is this: ${GITHUB_SHA}"
+
       - name: Gather Release Type
         id: gather-release-type
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # Extract the commit message from the most recent commit
-          COMMIT_MESSAGE=$(git log --format=%B -n 1)
-
-          # Check for release type labels in the commit message
-          if [[ $COMMIT_MESSAGE == *"[major]"* ]]; then
+          # Check for release type labels in the pr title
+          if [[ $COMMIPR_TITLET_MESSAGE == *"[major]"* ]]; then
             RELEASE_TYPE="MAJOR"
-          elif [[ $COMMIT_MESSAGE == *"[minor]"* ]]; then
+          elif [[ $PR_TITLE == *"[minor]"* ]]; then
             RELEASE_TYPE="MINOR"
-          elif [[ $COMMIT_MESSAGE == *"[patch]"* ]]; then
+          elif [[ $PR_TITLE == *"[patch]"* ]]; then
             RELEASE_TYPE="PATCH"
           else
             # Handle cases where no release type is specified
@@ -59,10 +67,10 @@ jobs:
           # Increment the version based on the release type
           if [ "$RELEASE_TYPE" == "MAJOR" ]; then
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-            NEW_VERSION="${VERSION_PARTS[0]}.$((${VERSION_PARTS[1]} + 1)).0"
+            NEW_VERSION="$((${VERSION_PARTS[0]} + 1)).0.0"
           elif [ "$RELEASE_TYPE" == "MINOR" ]; then
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-            NEW_VERSION="${VERSION_PARTS[0]}.$((${VERSION_PARTS[1]} + 1)).${VERSION_PARTS[2]}"
+            NEW_VERSION="${VERSION_PARTS[0]}.$((${VERSION_PARTS[1]} + 1)).0"
           else
             IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
             NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$((${VERSION_PARTS[2]} + 1))"
