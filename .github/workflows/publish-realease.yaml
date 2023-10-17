@@ -25,12 +25,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Print sha
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-        run: |
-          echo "The github sha is this: ${GITHUB_SHA}"
-
       - name: Gather Release Type
         id: gather-release-type
         env:
@@ -88,13 +82,13 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ncipollo/release-action@v1
         with:
-          commit: ${{ github.sha }}
+          commit: ${{ github.event.pull_request.head.sha }}
           tag: ${{ steps.generate-new-version.outputs.new-version }}
 
       - name: Increment Version and Retag
         env:
           NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
-          DEV_IMAGE_TAG: ${{ github.sha }}
+          DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
         run: |
           # Retag the images with the new version
           docker tag $REGISTRY/${IMAGE_NAME,,}:$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
