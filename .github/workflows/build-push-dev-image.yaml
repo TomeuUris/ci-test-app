@@ -45,7 +45,8 @@ jobs:
             latest=false
           tags: |
             type=sha
-            type=edge
+            type=sha,format=long
+            type=raw,value=edge
 
       # Builds and pushes the image to the registry
       - name: Build and push Docker image
