@@ -91,8 +91,8 @@ jobs:
           DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
         run: |
           # Retag the images with the new version
-          docker tag $REGISTRY/${IMAGE_NAME,,}:$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
-          docker tag $REGISTRY/${IMAGE_NAME,,}:$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
+          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
+          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
       
           # Push the retagged images to the public registry
           docker push $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
