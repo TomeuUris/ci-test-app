@@ -78,7 +78,12 @@ jobs:
         env:
           NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
           DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
+          GHCR_USER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Login to registry
+          docker login $REGISTRY -u $GHCR_USER -p &GHCR_TOKEN 
+ 
           # Get dev image
           docker pull $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG
           
