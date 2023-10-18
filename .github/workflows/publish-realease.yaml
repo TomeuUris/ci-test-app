@@ -74,6 +74,22 @@ jobs:
           echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Increment Version and Retag
+        env:
+          NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
+          DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Get dev image
+          docker pull $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG
+          
+          # Retag the images with the new version
+          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
+          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
+          
+          # Push the retagged images to the public registry
+          docker push $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
+          docker push $REGISTRY/${IMAGE_NAME,,}:latest
+
       - name: Set up Git
         run: |
           git config --global user.email "actions@github.com"
@@ -84,19 +100,3 @@ jobs:
         with:
           commit: ${{ github.event.pull_request.head.sha }}
           tag: ${{ steps.generate-new-version.outputs.new-version }}
-
-      - name: Increment Version and Retag
-        env:
-          NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
-          DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
-        run: |
-          # Get dev image
-          docker pull $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG
- 
-          # Retag the images with the new version
-          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
-          docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
-      
-          # Push the retagged images to the public registry
-          docker push $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
-          docker push $REGISTRY/${IMAGE_NAME,,}:latest
