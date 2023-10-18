@@ -82,7 +82,7 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Login to registry
-          docker login $REGISTRY -u $GHCR_USER -p &GHCR_TOKEN 
+          docker login $REGISTRY -u $GHCR_USER -p $GHCR_TOKEN 
  
           # Get dev image
           docker pull $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG
