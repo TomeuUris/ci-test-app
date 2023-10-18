@@ -90,6 +90,9 @@ jobs:
           NEW_VERSION: ${{ steps.generate-new-version.outputs.new-version }}
           DEV_IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
         run: |
+          # Get dev image
+          docker pull $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG
+ 
           # Retag the images with the new version
           docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:$NEW_VERSION
           docker tag $REGISTRY/${IMAGE_NAME,,}:sha-$DEV_IMAGE_TAG $REGISTRY/${IMAGE_NAME,,}:latest
