@@ -9,3 +9,7 @@ def health():
 @example_routes.get('/test_endpoint')
 def test_endpoint():
     return 'This is a test endpoint'
+
+@example_routes.get('/welcomer')
+def welcome(name: str = 'stranger'):
+    return f'Welcome {name}!'
