@@ -1,1 +1,1 @@
-from auth import check_api_key
+from .auth import check_api_key
